@@ -1,77 +1,89 @@
 import './App.css'
-import { useEffect } from 'react'
-import { useState } from 'react';
+import { useEffect, useRef } from 'react'
 
 function App() {
-  const [isFinish, setIsFinish] = useState(false)
+  const squareRef = useRef([{ x: 50, y: 0, width: 50, color: 'red', text: 'A' }])
+  const canvasRef = useRef(null)
   const $width = window.innerWidth - 25
   const $height = window.innerHeight - 25
-
-  let squares = [
-    { x: 50, y: 0, width: 50, color: 'red', text: 'A' },
-  ]
+  const desiredFPS = 120;
+  const frameDuration = 1000 / desiredFPS;
+  const animationId = useRef()
+  let lastFrameTime = 0;
 
   function handleKeydown(event) {
-    const key = event.key.toLowerCase();
-    if (['a', 'b', 'c', 'd', 'e'].includes(key)) {
-      squares = squares.filter(({text}) => { console.log(`key: ${key.toUpperCase() }, text: ${text}`); text !== key.toUpperCase() })
-      console.log(`key pressed ${key}`)
-      squares.forEach(x => console.log(x.text))
+    const key = event.key.toUpperCase();
+    if (['A', 'B', 'C', 'D', 'E'].includes(key)) {
+      squareRef.current = squareRef.current.filter(square => square.text !== key.toUpperCase())
     }
   }
 
-  document.addEventListener('keydown', handleKeydown);
-
   const gameloop = setInterval(() => {
-    squares.push({
+    squareRef.current.push({
       x: getRandomValue(0, $width),
       y: 0,
       width: getRandomValue(50, 400),
       color: `rgb(${getRandomValue(0, 255)} ${getRandomValue(0, 255)} ${getRandomValue(0, 255)} / 100%)`,
       text: getLetter(getRandomValue(1, 5))
     })
-  }, 800)
+  }, 2000)
 
   function endGame() {
+    window.cancelAnimationFrame(animationId.current)
     clearInterval(gameloop)
-    setIsFinish(true)
+    canvasRef.current.onKeyDown = null
     console.warn("end game")
   }
 
+  function drawRectangles(ctx, canvas) {
+    let isFinish = false
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    drawEndLine(ctx)
+
+    squareRef.current.forEach(square => {
+      ctx.fillStyle = square.color
+      ctx.fillRect(square.x, square.y, square.width, square.width)
+
+      ctx.fillStyle = 'white'
+      ctx.font = '20px Arial'
+      ctx.fillText(square.text, square.x + (square.width / 2 - 7), square.y + (square.width / 2 + 8))
+
+      square.y += 1
+      if (square.y + square.width >= $height - 150) isFinish = true
+    })
+    return isFinish
+  }
+
+  function drawEndLine(ctx) {
+    ctx.beginPath()
+    ctx.moveTo(25, $height - 150)
+    ctx.lineTo($width - 25, $height - 150)
+    ctx.fill()
+    ctx.closePath()
+    ctx.stroke()
+  }
+
+  function animate(timestamp) {
+    let isFinish
+    if (timestamp - lastFrameTime >= frameDuration) {
+      const canvas = canvasRef.current
+      if (canvas) {
+        const ctx = canvas.getContext('2d')
+        isFinish = drawRectangles(ctx, canvas)
+        lastFrameTime = timestamp
+      }
+    }
+    if (!isFinish) {
+      animationId.current = requestAnimationFrame(animate)
+    } else {
+      endGame()
+    }
+  }
+
   useEffect(() => {
-    const canvas = document.getElementById('canvas')
-    const ctx = canvas.getContext('2d')
-
-    function drawEndLine() {
-      ctx.beginPath();
-      ctx.moveTo(25, $height - 150);
-      ctx.lineTo($width - 25, $height - 150);
-      ctx.fill();
-      ctx.closePath();
-      ctx.stroke();
-    }
-
-    function drawRectangles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      squares.forEach(square => {
-        ctx.fillStyle = square.color
-        ctx.fillRect(square.x, square.y, square.width, square.width)
-
-        ctx.fillStyle = 'white'
-        ctx.font = '20px Arial'
-        ctx.fillText(square.text, square.x + (square.width / 2 - 7), square.y + (square.width / 2 + 8))
-
-        drawEndLine()
-
-        if (isFinish === false) square.y += 1
-        if (square.y + square.width >= canvas.height) endGame()
-      })
-
-      if (!isFinish) requestAnimationFrame(drawRectangles)
-    }
-
-    drawRectangles()
+    canvasRef.current.focus()
+    canvasRef.current.onKeyDown = handleKeydown
+    animationId.current = requestAnimationFrame(animate)
   }, [])
 
 
@@ -94,7 +106,7 @@ function App() {
   }
 
   return (
-    <canvas id="canvas" width={$width} height={$height}>
+    <canvas tabIndex="0" onKeyDown={handleKeydown} ref={canvasRef} width={$width} height={$height}>
     </canvas>
   )
 }
