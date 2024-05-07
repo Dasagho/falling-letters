@@ -1,4 +1,4 @@
-export const $width = window.innerWidth - 25
+export const $width = window.innerWidth - 325
 export const $height = window.innerHeight - 25
 
 export function drawCanvas(canvas, squares) {
@@ -12,6 +12,7 @@ export function drawCanvas(canvas, squares) {
 }
 
 function drawRectangles(ctx, squares) {
+    let isFinish = false
     for(let square of squares) {
         ctx.fillStyle = square.color
         ctx.fillRect(square.x, square.y, square.width, square.width)
@@ -21,8 +22,9 @@ function drawRectangles(ctx, squares) {
         ctx.fillText(square.text, square.x + (square.width / 2 - 7), square.y + (square.width / 2 + 8))
 
         square.y += 1
-        if (square.y + square.width >= $height - 150) return true
+        if (square.y + square.width >= $height - 150) isFinish = true
     }
+    return isFinish
 }
 
 function drawEndLine(ctx) {

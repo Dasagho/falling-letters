@@ -1,0 +1,12 @@
+#root {
+    display: flex;
+}
+
+aside {
+    width: 100%;
+    margin: 0 6px;
+    padding: 4px;
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+}

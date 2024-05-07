@@ -1,34 +1,33 @@
 import './App.css'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { genRandomSquare } from './Utils/generation'
 import { $height, $width, drawCanvas } from './Canvas/draw'
-const GEN_SQUARE_INTERVAL = 500
+const GEN_SQUARE_INTERVAL = 5000
 
 function App() {
+  const [score, setScore] = useState(0)
   const squareRef = useRef([{ x: 50, y: 0, width: 50, color: 'red', text: 'A' }])
   const canvasRef = useRef(null)
   const desiredFPS = 60
   const frameDuration = 1000 / desiredFPS
   const animationId = useRef()
   let lastFrameTime = 0
-  let score = 0
+
 
   function handleKeydown(event) {
     const key = event.key.toUpperCase()
     if (['A', 'B', 'C', 'D', 'E'].includes(key)) {
+      const prevLength = squareRef.current.length
       squareRef.current = squareRef.current.filter(square => square.text !== key.toUpperCase())
+      const newLength = squareRef.current.length
+
+      setScore(prevState => prevState + (prevLength - newLength))
     }
   }
 
   const gameloop = setInterval(() => {
     const newSquare = genRandomSquare()
-    squareRef.current.push({
-      x: newSquare.x,
-      y: 0,
-      width: newSquare.width,
-      color: newSquare.color,
-      text: newSquare.text
-    })
+    squareRef.current.push(newSquare)
   }, GEN_SQUARE_INTERVAL)
 
   useEffect(() => {
