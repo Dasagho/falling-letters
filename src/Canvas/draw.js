@@ -13,7 +13,6 @@ export function drawCanvas(canvas, squares) {
 
 function drawRectangles(ctx, squares) {
     for(let square of squares) {
-        console.table(square)
         ctx.fillStyle = square.color
         ctx.fillRect(square.x, square.y, square.width, square.width)
 
