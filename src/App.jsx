@@ -2,17 +2,18 @@ import './App.css'
 import { useEffect, useRef, useState } from 'react'
 import { genRandomSquare } from './Utils/generation'
 import { $height, $width, drawCanvas } from './Canvas/draw'
-const GEN_SQUARE_INTERVAL = 5000
+const GEN_SQUARE_INTERVAL = 1000
 
 function App() {
   const [score, setScore] = useState(0)
   const squareRef = useRef([{ x: 50, y: 0, width: 50, color: 'red', text: 'A' }])
+  const lostSquareRef = useRef([])
   const canvasRef = useRef(null)
   const desiredFPS = 60
   const frameDuration = 1000 / desiredFPS
   const animationId = useRef()
   let lastFrameTime = 0
-
+  let gameloop
 
   function handleKeydown(event) {
     const key = event.key.toUpperCase()
@@ -25,25 +26,32 @@ function App() {
     }
   }
 
-  const gameloop = setInterval(() => {
-    const newSquare = genRandomSquare()
-    squareRef.current.push(newSquare)
-  }, GEN_SQUARE_INTERVAL)
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    gameloop = setInterval(() => {
+      const newSquare = genRandomSquare()
+      squareRef.current.push(newSquare)
+    }, GEN_SQUARE_INTERVAL)
+
     canvasRef.current.focus()
     // canvasRef.current.onKeyDown = handleKeydown
     animationId.current = requestAnimationFrame(animate)
+
+    return () => {
+      clearInterval(gameloop)
+      window.cancelAnimationFrame(animationId.current)
+      canvasRef.current.onKeyDown = null
+      console.warn("Game cleanup done")
+    }
   }, [])
 
   function animate(timestamp) {
-    let isFinish
     if (timestamp - lastFrameTime >= frameDuration) {
-      isFinish = drawCanvas(canvasRef.current, squareRef.current)
+      drawCanvas(canvasRef.current, squareRef.current, lostSquareRef.current)
       lastFrameTime = timestamp
     }
 
-    if (!isFinish) {
+    if (lostSquareRef.current.length < 20) {
       animationId.current = requestAnimationFrame(animate)
     } else {
       endGame()
